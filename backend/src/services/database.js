@@ -57,7 +57,7 @@ export async function insertTransfers(transfersArray) {
         INSERT INTO transfers (chain, from_address, to_address, amount, tx_hash, block_number, timestamp)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (tx_hash) DO NOTHING
-        RETURNING id
+        RETURNING idx
     `;
 
     const results = [];
