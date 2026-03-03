@@ -3,6 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import pkg from 'pg';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 const { Client } = pkg;
 
 // Get current directory (needed for ES modules)

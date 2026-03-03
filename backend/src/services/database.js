@@ -25,20 +25,21 @@ console.log("Database Pool Initialized");
 
 // Helper function: Insert a single transfer
 export async function insertTransfer(transferData) {
-    const { chain, from_address, to_address, amount, tx_hash, block_number, timestamp } = transferData;
+    const { chain, contract_address, from_address, to_address, amount, tx_hash, block_number, timestamp } = transferData;
 
     const query = `
-        INSERT INTO transfers (chain, from_address, to_address, amount, tx_hash, block_number, timestamp)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO transfers (chain, contract_address, from_address, to_address, amount, tx_hash, block_number, timestamp)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (tx_hash) DO NOTHING
-        RETURNING idx
+        RETURNING id
     `;
 
     try {
         const result = await pool.query(query, [
             chain,
-            from_address,
-            to_address,
+            contract_address.toLowerCase(),
+            from_address.toLowerCase(),
+            to_address.toLowerCase(),
             amount,
             tx_hash,
             block_number,
@@ -54,10 +55,10 @@ export async function insertTransfer(transferData) {
 // Helper function: Insert multiple transfers (batch)
 export async function insertTransfers(transfersArray) {
     const query = `
-        INSERT INTO transfers (chain, from_address, to_address, amount, tx_hash, block_number, timestamp)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO transfers (chain, contract_address, from_address, to_address, amount, tx_hash, block_number, timestamp)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT (tx_hash) DO NOTHING
-        RETURNING idx
+        RETURNING id
     `;
 
     const results = [];
@@ -66,8 +67,9 @@ export async function insertTransfers(transfersArray) {
         try {
             const result = await pool.query(query, [
                 transfer.chain,
-                transfer.from_address,
-                transfer.to_address,
+                transfer.contract_address.toLowerCase(),
+                transfer.from_address.toLowerCase(),
+                transfer.to_address.toLowerCase(),
                 transfer.amount,
                 transfer.tx_hash,
                 transfer.block_number,
@@ -149,7 +151,7 @@ export async function getTransferFromAddress(address, chain = null, limit = 100,
         params.push(chain);
     }
 
-    query += ` ORDER BY timestamp DESC LIMIT $${params.lenth + 1} OFFSET $${params.length + 2}`;
+    query += ` ORDER BY timestamp DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
 
     try {
@@ -162,7 +164,7 @@ export async function getTransferFromAddress(address, chain = null, limit = 100,
 }
 
 // Helper function: Get transfers TO an address
-export async function gerTransfersToAddress(address, chain = null, limit = 100, offset = 0) {
+export async function getTransfersToAddress(address, chain = null, limit = 100, offset = 0) {
     const normalizedAddress = address.toLowerCase();
 
     let query = `
@@ -188,7 +190,7 @@ export async function gerTransfersToAddress(address, chain = null, limit = 100, 
     }
 
     query += ` ORDER BY timestamp DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(limit, offest);
+    params.push(limit, offset);
 
     try {
         const result = await pool.query(query, params);
@@ -252,7 +254,7 @@ export async function insertTokenConfig(tokenData) {
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (chain, contract_address) DO UPDATE
         SET symbol = $3, decimals = $4
-        RETURNING idx 
+        RETURNING id 
     `;
 
     const params = [chain, contract_address, symbol, decimals];
